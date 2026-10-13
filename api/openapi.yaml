@@ -145,6 +145,10 @@ tags:
     description: Web Push (VAPID) subscriptions, rest-timer and test pushes
   - name: activity
     description: Live-workout presence heartbeat
+  - name: trainer
+    description: >-
+      Personal trainer mode (fork). A trainer manages the plan of the students linked to them;
+      a student links with a code the trainer generates. See docs/dev/PERSONAL_TRAINER.md.
   - name: admin
     description: Admin dashboard. Requires an admin session (`ADMIN_UIDS` or `admin:true`)
   - name: media
@@ -2953,6 +2957,177 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
+  /api/admin/user/trainer:
+    post:
+      tags: [admin]
+      operationId: adminUserTrainer
+      summary: 'Admin: grant or revoke the trainer role'
+      description: Revoking unlinks every student of that trainer and drops their unused codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                trainer: { type: boolean }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/students:
+    get:
+      tags: [trainer]
+      operationId: trainerStudents
+      summary: 'List my students'
+      description: Each with lock flag, last sync and last workout date. 403 for a non-trainer.
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/codes:
+    get:
+      tags: [trainer]
+      operationId: trainerCodes
+      summary: 'List my link codes'
+      description: Used and unused codes this trainer generated.
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/codes/new:
+    post:
+      tags: [trainer]
+      operationId: trainerCodeNew
+      summary: 'Generate a link code'
+      description: 64-bit code a student redeems with POST /api/student/link.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/codes/revoke:
+    post:
+      tags: [trainer]
+      operationId: trainerCodeRevoke
+      summary: 'Revoke an unused link code'
+      description: A used code cannot be revoked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/student:
+    get:
+      tags: [trainer]
+      operationId: trainerStudentGet
+      summary: 'Read a student document'
+      description: Plan, workouts, weigh-ins and measurements, without media refs. Includes rev and wid for the conditional write. 404 for anyone not your student.
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+    put:
+      tags: [trainer]
+      operationId: trainerStudentPut
+      summary: 'Save a student plan'
+      description: Writes only routines, week, dayPlan, queue, rotation and scheduleMode (custom exercises are added, never removed). baseRev is required; a stale one is a 409 with the current document.
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state: { type: object }
+                baseRev: { type: integer }
+                baseWid: { type: string }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/student/lock:
+    post:
+      tags: [trainer]
+      operationId: trainerStudentLock
+      summary: 'Lock or unlock a student plan'
+      description: A locked student cannot change the plan keys; the server keeps the stored ones.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                locked: { type: boolean }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/trainer/student/unlink:
+    post:
+      tags: [trainer]
+      operationId: trainerStudentUnlink
+      summary: 'Unlink a student'
+      description: The student keeps their document and the plan becomes theirs again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/student/trainer:
+    get:
+      tags: [trainer]
+      operationId: studentTrainer
+      summary: 'My trainer'
+      description: The linked trainer (or null) and whether the plan is locked.
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/student/link:
+    post:
+      tags: [trainer]
+      operationId: studentLink
+      summary: 'Link to a trainer'
+      description: Redeems a trainer code. 404 for an unknown or used code, 409 when already linked to another trainer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
+  /api/student/unlink:
+    post:
+      tags: [trainer]
+      operationId: studentUnlink
+      summary: 'Unlink from my trainer'
+      description: Removes the link and the lock.
+      responses:
+        '200': { description: OK }
+        '401': { description: Not signed in. }
 components:
   securitySchemes:
     cookieAuth:
