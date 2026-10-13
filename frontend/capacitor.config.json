@@ -1,6 +1,6 @@
 {
-  "appId": "ch.duartesantos.opengym",
-  "appName": "openGym",
+  "appId": "cloud.netpoint.personal",
+  "appName": "openGym Personal",
   "webDir": "dist",
   "backgroundColor": "#0c0e12",
   "android": {
