@@ -2449,7 +2449,7 @@ const routes = {
     const S = readState(u.id) || {};
     json(res, 200, {
       user: {
-        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
+        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null, trainer: !!u.trainer,
         // Only on an instance with password sign-in: whether they have one, and until when an
         // unused reset code is good.
         ...(PASSWORD_LOGIN ? { password: hasPassword(u), email: u.email || null, resetUntil: u.pwReset?.exp > Date.now() ? u.pwReset.exp : null } : {})

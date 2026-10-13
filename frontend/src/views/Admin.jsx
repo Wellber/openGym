@@ -92,6 +92,7 @@ function UserDetail({ id, onChanged, close }) {
     <h3 className="capitalize">{u.name}</h3>
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '8px 0 12px' }}>
       {u.admin && <span className="adm-pill acc">admin</span>}
+      {u.trainer && <span className="adm-pill acc">trainer</span>}
       {u.disabled && <span className="adm-pill bad">disabled</span>}
       {u.invitedBy && <span className="adm-pill">invite {u.invitedBy}</span>}
       {u.password && <span className="adm-pill">password</span>}
@@ -107,6 +108,11 @@ function UserDetail({ id, onChanged, close }) {
       <div className="tile"><div className="l">Routines</div><div className="v" style={{ fontSize: '1.1rem' }}>{d.routines.length}</div></div>
       <div className="tile"><div className="l">Last sync</div><div className="v" style={{ fontSize: '.95rem' }}>{rel(d.lastSync)}</div></div>
     </div>
+    {/* Personal trainer fork: the role is granted here, students link themselves with a code. */}
+    <button className="btn" style={{ margin: '12px 0 4px' }} onClick={() => api('/api/admin/user/trainer', { method: 'POST', body: JSON.stringify({ id: u.id, trainer: !u.trainer }) })
+      .then(() => { toast(u.trainer ? 'Trainer role removed' : 'Now a trainer'); onChanged(); close() }).catch(e => toast(e.message))}>
+      {u.trainer ? 'Remove trainer role' : 'Make trainer'}</button>
+    <div className="adm-hint">{u.trainer ? 'Their students are unlinked and get their plans back.' : 'A trainer generates link codes and manages the plans of their students.'}</div>
     {!u.admin && <>
       <button className={'btn ' + (u.disabled ? 'primary' : 'danger')} style={{ margin: '12px 0 4px' }}
         onClick={() => u.disabled ? setDisabled(false)
