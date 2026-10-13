@@ -1,0 +1,77 @@
+// Strings of the personal trainer screens (fork). Kept out of src/locales/ on purpose: the upstream
+// packs are checked against each other (scripts/check-locales.mjs), so a key added to them has to
+// go into all eighteen, and every upstream change to those files would conflict with the fork.
+// English is the key, as in lib/i18n.js; Portuguese covers both pt and pt-BR.
+import { getLang } from './i18n-core.js'
+
+const PT = {
+  'Students': 'Alunos',
+  'My students': 'Meus alunos',
+  'Personal trainer': 'Personal trainer',
+  'Manage the plans of the people you train.': 'Gerencie os treinos de quem você acompanha.',
+  'No students yet. Generate a code and give it to your student: they enter it in Settings → Personal trainer.': 'Nenhum aluno ainda. Gere um código e passe ao aluno: ele digita em Ajustes → Personal trainer.',
+  'Link codes': 'Códigos de vínculo',
+  'New code': 'Novo código',
+  'Note (optional)': 'Observação (opcional)',
+  'Each code links one student, once.': 'Cada código vincula um aluno, uma única vez.',
+  'used by {0}': 'usado por {0}',
+  'unused': 'não usado',
+  'Revoke': 'Revogar',
+  'Copied': 'Copiado',
+  'Loading…': 'Carregando…',
+  'Last workout {0}': 'Último treino {0}',
+  'No workouts yet': 'Nenhum treino ainda',
+  'Plan locked': 'Plano travado',
+  'Plan': 'Plano',
+  'History': 'Histórico',
+  'Body': 'Corpo',
+  'Routines': 'Rotinas',
+  'Week': 'Semana',
+  'Send from my library': 'Enviar da minha biblioteca',
+  'Pick routines from your own plan. They are copied to the student; yours stay as they are.': 'Escolha rotinas do seu próprio plano. Elas são copiadas para o aluno; as suas continuam iguais.',
+  'Your library is empty. Build routines in your own Plan tab first.': 'Sua biblioteca está vazia. Monte rotinas na sua aba Plano primeiro.',
+  'Send': 'Enviar',
+  'Replace with…': 'Substituir por…',
+  'Edit in my library': 'Editar na minha biblioteca',
+  'A copy goes to your Plan as “{0}”. Edit it there with the full editor, then come back and use “Replace with…” on this routine.': 'Uma cópia vai para o seu Plano como “{0}”. Edite lá com o editor completo, volte e use “Substituir por…” nesta rotina.',
+  'Remove from plan': 'Remover do plano',
+  'Remove “{0}” from {1}’s plan?': 'Remover “{0}” do plano de {1}?',
+  'Their workout history keeps every session done with it.': 'O histórico de treinos mantém todas as sessões feitas com ela.',
+  'Remove': 'Remover',
+  'Saved': 'Salvo',
+  'The plan changed on their side since you opened it. Reloaded — please redo the last change.': 'O plano mudou do lado do aluno desde que você abriu. Recarregado — refaça a última alteração.',
+  'Lock the plan': 'Travar o plano',
+  'The student can train and log, but not change routines or the week.': 'O aluno treina e registra, mas não altera rotinas nem a semana.',
+  'Unlink student': 'Desvincular aluno',
+  'Unlink {0}?': 'Desvincular {0}?',
+  'They keep their data and the plan becomes theirs to change.': 'O aluno mantém os dados e o plano volta a ser dele.',
+  'Unlink': 'Desvincular',
+  'No routines yet.': 'Nenhuma rotina ainda.',
+  '{0} exercises': '{0} exercícios',
+  'Rest': 'Descanso',
+  'Weigh-ins': 'Pesagens',
+  'Measurements': 'Medidas',
+  'No weigh-ins yet.': 'Nenhuma pesagem ainda.',
+  '{0} sets': '{0} séries',
+  'Your trainer': 'Seu personal',
+  'Linked to {0}.': 'Vinculado a {0}.',
+  'Your trainer manages your routines and week. You train and log as usual.': 'Seu personal gerencia suas rotinas e semana. Você treina e registra normalmente.',
+  'Your trainer can see your plan, workouts, weigh-ins and measurements, and change your plan.': 'Seu personal vê seu plano, treinos, pesagens e medidas, e pode alterar seu plano.',
+  'Enter trainer code': 'Digitar código do personal',
+  'Code': 'Código',
+  'Link': 'Vincular',
+  'Linked to {0}': 'Vinculado a {0}',
+  'That code is not valid.': 'Esse código não é válido.',
+  'Unlink from my trainer': 'Desvincular do meu personal',
+  'Unlink from {0}?': 'Desvincular de {0}?',
+  'They stop seeing your training and can no longer change your plan.': 'Ele deixa de ver seu treino e não pode mais alterar seu plano.',
+  'Your plan is managed by your trainer.': 'Seu plano é gerenciado pelo seu personal.',
+  'Your trainer locked the plan. Ask them to change it.': 'Seu personal travou o plano. Peça a ele para alterar.',
+  'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
+}
+
+export function tr(key, ...args) {
+  const lang = getLang() || ''
+  const s = (lang === 'pt' || lang.startsWith('pt-')) ? (PT[key] || key) : key
+  return args.length ? s.replace(/\{(\d+)\}/g, (m, i) => (args[i] != null ? String(args[i]) : m)) : s
+}

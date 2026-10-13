@@ -61,7 +61,8 @@ test('a locked student push keeps the stored plan and their own history', () => 
     week: { mon: 'r9', tue: 'r1' }, rotation: { id: 'x' },
     edited: { 'week.mon': 200, 'week.tue': 200, restSec: 200 },
     deleted: { routines: { gone: 50, r1old: 200 }, workouts: { w0: 200 } },
-    workouts: [{ id: 'w1', d: '2026-10-13' }], restSec: 120, _rev: 7
+    workouts: [{ id: 'w1', d: '2026-10-13' }], restSec: 120, _rev: 7,
+    queue: { items: ['r1'], pos: 1 }, dayPlan: { '2026-10-14': ['r1'] }
   };
   const out = enforcePlanLock(cur, incoming);
   assert.deepEqual(out.routines, cur.routines, 'routines restored');
@@ -69,6 +70,8 @@ test('a locked student push keeps the stored plan and their own history', () => 
   assert.equal(out.rotation, null, 'rotation restored');
   assert.deepEqual(out.workouts, [{ id: 'w1', d: '2026-10-13' }], 'their workout stays');
   assert.equal(out.restSec, 120, 'their setting stays');
+  assert.deepEqual(out.queue, { items: ['r1'], pos: 1 }, 'a rotation pass still advances');
+  assert.deepEqual(out.dayPlan, { '2026-10-14': ['r1'] }, 'moving a session stays theirs');
   assert.equal(out.edited['week.mon'], 100, 'plan stamp is the stored one');
   assert.ok(!('week.tue' in out.edited), 'no new plan stamp');
   assert.equal(out.edited.restSec, 200, 'setting stamp stays');

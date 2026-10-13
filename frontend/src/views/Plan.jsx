@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { tr as trainerText } from '../lib/trainer-i18n.js'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -169,6 +170,7 @@ export default function Plan() {
       </div>
     </div>
     <input ref={fileRef} type="file" accept="application/json,.json" onChange={pickFile} hidden />
+    {user?.planLocked && <div className="card row" style={{ gap: 10 }}><Icon name="lock" /><div className="small">{trainerText('Your plan is managed by your trainer.')}</div></div>}
     <Segmented className="plan-views" value={view} onChange={setView}
       options={[{ value: 'schedule', label: t('Schedule') }, { value: 'routines', label: t('Routines') }]} />
     {view === 'routines'

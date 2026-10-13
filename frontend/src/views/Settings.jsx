@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, forwardRef, useSyncExternalStore } from 'react'
+import TrainerSettings from '../components/TrainerSettings.jsx'
 import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom'
 import { useStore, DEF, hasData } from '../store/useStore.js'
 import { healthStatus, loadHealth, enableHealth, disableHealth, openHealthConnect, onHealthChange } from '../lib/health-sync.js'
@@ -844,6 +845,7 @@ export default function Settings({ page = null, find = null, via = null }) {
       {user && !DEMO && <ServerSyncSection>
         {MOBILE && <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
+          <TrainerSettings />
           <AccountIdRow id={user.id} />
           <Row icon="signOut" iconTint="var(--red)" title={t('Disconnect')} danger onClick={disconnect} />
         </>}
@@ -864,6 +866,7 @@ export default function Settings({ page = null, find = null, via = null }) {
             onClick={() => window.open(REPO, '_blank', 'noopener')} />
         </> : user ? <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
+          <TrainerSettings />
           <PasskeysRow state={passkeys.st} changed={credsChanged} />
           <DeviceLinkRow state={passkeys.st} />
           <Row icon="qr" iconTint="var(--blue)" title={t('Pair the mobile app')} subtitle={t('Connect the openGym app on your phone to this account.')} accessory="chevron"

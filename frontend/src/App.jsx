@@ -42,6 +42,8 @@ import StructuralBalance from './views/StructuralBalance.jsx'
 import ProgressPhotos from './views/ProgressPhotos.jsx'
 import { SettingsRoute } from './views/Settings.jsx'
 import Admin from './views/Admin.jsx'
+import Trainer from './views/Trainer.jsx'
+import TrainerStudent from './views/TrainerStudent.jsx'
 import CoachChat from './views/CoachChat.jsx'
 import Measurements from './views/Measurements.jsx'
 import CoachIntake from './views/CoachIntake.jsx'
@@ -228,6 +230,8 @@ function Shell() {
               <Route path="/coach/proposal" element={<Navigate to="/coach" replace />} />
               <Route path="/coach/setup" element={<CoachSetup />} />
               <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
+              <Route path="/trainer" element={user?.trainer ? <Trainer /> : <Navigate to="/home" replace />} />
+              <Route path="/trainer/s/:id" element={user?.trainer ? <TrainerStudent /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           )}

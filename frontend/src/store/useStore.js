@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { keepLockedPlan } from '../lib/trainer.js'
+import { tr as trainerText } from '../lib/trainer-i18n.js'
 import { api, setRemoteAuth } from '../lib/api.js'
 import { localTZ } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -303,6 +305,14 @@ export function restoredStateFor(local, remote, dirty = false) {
   const next = sanitizeAccent(Object.assign(clone(DEF), remote))
   if (local.active) next.active = local.active
   return next
+}
+
+// Says why a plan edit did nothing, at most every few seconds (a drag fires many updates).
+let lockedToastAt = 0
+const toastLocked = () => {
+  if (Date.now() - lockedToastAt < 4000) return
+  lockedToastAt = Date.now()
+  import('./useUI.js').then(m => m.useUI.getState().toast?.(trainerText('Your trainer locked the plan. Ask them to change it.'))).catch(() => {})
 }
 
 export const useStore = create((set, get) => {
@@ -1324,6 +1334,9 @@ export const useStore = create((set, get) => {
       const prev = get().S
       const S = clone(prev)
       mut(S)
+      // Personal trainer fork: a student whose trainer locked the plan cannot change it here
+      // either, or the server would refuse it on every push while this copy kept it (lib/trainer.js).
+      if (get().user?.planLocked && keepLockedPlan(prev, S)) toastLocked()
       // What the change removed, and which routines, workouts, settings and plan days it touched,
       // each with one time that comes after every stamp the copy already carries: a conflict then
       // keeps a removal and the edit made last, even from a device whose clock runs behind

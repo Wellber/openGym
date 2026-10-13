@@ -15,6 +15,10 @@ export const PLAN_KEYS = ['routines', 'week', 'dayPlan', 'queue', 'rotation', 's
 // The `edited` stamps that belong to those keys: whole-key stamps, per-day stamps (`week.mon`,
 // `dayPlan.2026-10-13`) and the routine order (sync-stamps.js ORDER_KEY).
 export const isPlanStamp = k => k === 'routineOrder' || PLAN_KEYS.some(p => k === p || k.startsWith(p + '.'));
+// What a lock freezes: the plan minus `queue` (a rotation pass advances as the student trains) and
+// `dayPlan` (moving one session to another day is the student's call). The trainer still writes both.
+export const LOCK_KEYS = ['routines', 'week', 'rotation', 'scheduleMode'];
+const isLockStamp = k => k === 'routineOrder' || LOCK_KEYS.some(p => k === p || k.startsWith(p + '.'));
 
 // What a trainer reads of a student: the plan plus the history the fork's spec lists. Never media
 // refs, the Coach, reminders, push or app preferences.
@@ -73,7 +77,7 @@ export function applyPlan(cur, incoming) {
 export function enforcePlanLock(cur, incoming) {
   if (!isMap(incoming)) return incoming;
   const stored = isMap(cur) ? cur : {};
-  for (const k of PLAN_KEYS) {
+  for (const k of LOCK_KEYS) {
     if (k in stored) incoming[k] = clone(stored[k]); else delete incoming[k];
   }
   // Plan stamps go back to the stored ones, so the student's device cannot win a later merge
@@ -81,7 +85,7 @@ export function enforcePlanLock(cur, incoming) {
   if (isMap(incoming.edited)) {
     const was = isMap(stored.edited) ? stored.edited : {};
     for (const k of Object.keys(incoming.edited)) {
-      if (!isPlanStamp(k)) continue;
+      if (!isLockStamp(k)) continue;
       if (k in was) incoming.edited[k] = was[k]; else delete incoming.edited[k];
     }
   }
