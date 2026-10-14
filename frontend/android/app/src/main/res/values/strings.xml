@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">openGym Personal</string>
-    <string name="title_activity_main">openGym Personal</string>
+    <string name="app_name">WS-GYM</string>
+    <string name="title_activity_main">WS-GYM</string>
     <string name="package_name">cloud.netpoint.personal</string>
     <string name="custom_url_scheme">cloud.netpoint.personal</string>
     <string name="rest_countdown_channel_name">Rest countdown</string>

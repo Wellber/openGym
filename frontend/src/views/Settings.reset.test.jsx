@@ -157,6 +157,7 @@ describe('Settings — footer', () => {
   it('links the source code to its home on GitHub, on About & updates', () => {
     act(() => root.render(<Settings page="about" />))
     const link = [...host.querySelectorAll('a')].find(a => a.textContent === 'Source code')
-    expect(link.getAttribute('href')).toBe('https://github.com/DuarteSantos8/openGym')
+    // Fork: the modified source is offered (AGPL §13), lib/fork-config.js SOURCE_URL.
+    expect(link.getAttribute('href')).toBe('https://github.com/Wellber/openGym')
   })
 })

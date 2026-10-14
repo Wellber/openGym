@@ -11,6 +11,7 @@ import { askAddDeviceData } from '../sheets.jsx'
 import { normalizeServerUrl } from '../lib/remote.js'
 import { loadCfAccess, saveCfAccess } from '../lib/cf-access.js'
 import { FIXED_SERVER, FIXED_SERVER_HOST } from '../lib/fork-config.js'
+import Brand from '../components/Brand.jsx'
 import { tr } from '../lib/trainer-i18n.js'
 
 // A plain http:// server works (#428), but whatever the app sends, the pairing code and then its
@@ -136,8 +137,8 @@ export default function MobileOnboarding() {
   // Fork: one server, no local-only mode — the first screen is the pairing code itself.
   if (FIXED_SERVER) return (
     <div className="narrow" style={wrap}>
-      <div style={{ fontSize: 54, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="dumbbell" /></div>
-      <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 18px' }}>openGym Personal</h1>
+      <Brand />
+      <div style={{ height: 14 }} />
       <div style={{ textAlign: 'start' }}><ConnectSheet close={() => {}} /></div>
     </div>
   )

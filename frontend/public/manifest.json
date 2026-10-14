@@ -1,7 +1,7 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
-  "description": "Personal gym & body weight tracker",
+  "name": "WS-GYM",
+  "short_name": "WS-GYM",
+  "description": "Treinos com seu personal trainer — WS-GYM",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

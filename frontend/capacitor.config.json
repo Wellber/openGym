@@ -1,6 +1,6 @@
 {
   "appId": "cloud.netpoint.personal",
-  "appName": "openGym Personal",
+  "appName": "WS-GYM",
   "webDir": "dist",
   "backgroundColor": "#0c0e12",
   "android": {

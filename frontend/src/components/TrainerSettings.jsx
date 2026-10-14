@@ -57,6 +57,6 @@ export default function TrainerSettings() {
 export function ApkDownloadRow() {
   if (MOBILE) return null
   const href = appBase().replace(/\/$/, '') + '/wgym.apk'
-  return <Row icon="download" iconTint="var(--green)" title={tr('Android app')} subtitle={tr('Download the openGym Personal app for Android.')} accessory="chevron"
+  return <Row icon="download" iconTint="var(--green)" title={tr('Android app')} subtitle={tr('Download the WS-GYM app for Android.')} accessory="chevron"
     onClick={() => { const a = document.createElement('a'); a.href = href; a.download = 'wgym.apk'; document.body.appendChild(a); a.click(); a.remove() }} />
 }
