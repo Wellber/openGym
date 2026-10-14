@@ -18,7 +18,7 @@ function NewCodeSheet({ close, onMade }) {
     .then(r => { onMade(r.code); close() }).catch(e => toast(e.message))
   return <>
     <h3>{tr('New code')}</h3>
-    <div className="muted small" style={{ marginBottom: 10 }}>{tr('Each code links one student, once.')}</div>
+    <div className="muted small" style={{ marginBottom: 10 }}>{tr('Each code works once: to create a new student account or to link an existing one.')}</div>
     <TextField value={note} onChange={e => setNote(e.target.value)} placeholder={tr('Note (optional)')} maxLength={60} />
     <div style={{ height: 12 }} />
     <Button variant="primary" onClick={make}>{tr('New code')}</Button>
@@ -48,14 +48,14 @@ export default function Trainer() {
 
     <Section title={tr('Students')}>
       {students == null ? <Row title={tr('Loading…')} />
-        : students.length === 0 ? <Row icon="info" iconTint="var(--acc)" title={tr('No students yet. Generate a code and give it to your student: they enter it in Settings → Personal trainer.')} />
+        : students.length === 0 ? <Row icon="info" iconTint="var(--acc)" title={tr('No students yet. Generate a code and give it to your student: a new student creates their account with it; one who already has an account enters it in Settings → Personal trainer.')} />
         : students.map(s => <Row key={s.id} icon={s.planLocked ? 'lock' : 'personCircle'} iconTint="var(--indigo)" accessory="chevron"
             title={<span className="capitalize">{s.name}</span>}
             subtitle={[s.lastWorkout ? tr('Last workout {0}', fmtDate(s.lastWorkout)) : tr('No workouts yet'), s.planLocked ? tr('Plan locked') : ''].filter(Boolean).join(' · ')}
             onClick={() => nav('/trainer/s/' + encodeURIComponent(s.id))} />)}
     </Section>
 
-    <Section title={tr('Link codes')} footer={tr('Each code links one student, once.')}>
+    <Section title={tr('Link codes')} footer={tr('Each code works once: to create a new student account or to link an existing one.')}>
       {codes.map(c => <Row key={c.code} icon="key" iconTint={c.usedBy ? 'var(--label-3)' : 'var(--acc)'}
         title={<button className="adm-code" onClick={() => copy(c.code)} aria-label="copy code">{c.code}</button>}
         subtitle={[c.note, c.usedBy ? tr('used by {0}', c.usedByName || '?') : tr('unused')].filter(Boolean).join(' · ')}>

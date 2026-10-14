@@ -2998,7 +2998,7 @@ paths:
       tags: [trainer]
       operationId: trainerCodeNew
       summary: 'Generate a link code'
-      description: 64-bit code a student redeems with POST /api/student/link.
+      description: 64-bit code a student redeems with POST /api/student/link. On an invite-only instance it is also a signup invite: the account it creates starts out linked to the trainer.
       requestBody:
         required: true
         content:

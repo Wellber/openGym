@@ -17,7 +17,7 @@ import * as coachConfig from './coach/config.js';
 import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { trainerRoutes } from './trainer/routes.js';
-import { enforcePlanLock, isTrainer } from './trainer/core.js';
+import { enforcePlanLock, isTrainer, signupTrainerCode } from './trainer/core.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
@@ -58,6 +58,11 @@ const INVITE_ONLY = /^(1|true|yes|on)$/i.test(process.env.INVITE_ONLY || '');
 const FIRST_USER_ADMIN = /^(1|true|yes|on)$/i.test(process.env.FIRST_USER_ADMIN || '');
 // Checked synchronously right before db.users.push, with no await in between, so two
 // registrations racing each other cannot both see an empty instance.
+// Personal trainer fork: a signup code is an admin invite or a trainer's link code
+// (trainer/core.js signupTrainerCode). Either is burned the same way; a trainer code also links
+// the new account to its trainer (linkSignup).
+const signupInvite = code => db.invites.find(i => i.code === code && !i.usedBy && !i.revoked) || signupTrainerCode(db, code);
+const linkSignup = (inv, user) => { if (inv?.trainerId) user.trainerId = inv.trainerId; };
 function claimFirstAdmin(req, user) {
   if (!FIRST_USER_ADMIN || db.users.length !== 0) return;
   user.admin = true;
@@ -1287,7 +1292,7 @@ const passwordRoutes = {
     const name = text(body.name).trim().slice(0, 40);
     if (!name) return json(res, 400, { error: 'name required', code: 'missing' });
     const code = text(body.code).trim().toUpperCase();
-    const invite = () => db.invites.find(i => i.code === code && !i.usedBy && !i.revoked);
+    const invite = () => signupInvite(code);
     if (INVITE_ONLY && addressPaused(req, res, 'signup')) return;
     if (INVITE_ONLY && !invite()) {
       audit(req, 'auth.register.denied', { ok: false, name, msg: 'invite-rejected' });
@@ -1325,7 +1330,7 @@ const passwordRoutes = {
     if (email && emailTaken(email)) return emailRefused();
     const created = new Date().toISOString();
     const user = { id: crypto.randomBytes(12).toString('base64url'), name, created, pw: { h, set: created }, ...(email ? { email } : {}) };
-    if (inv) { user.invitedBy = inv.code; inv.usedBy = user.id; inv.usedAt = created; }
+    if (inv) { user.invitedBy = inv.code; inv.usedBy = user.id; inv.usedAt = created; linkSignup(inv, user); }
     claimFirstAdmin(req, user);
     db.users.push(user);
     saveDb();
@@ -2023,7 +2028,7 @@ const routes = {
     const name = text(body.name).trim().slice(0, 40);
     if (!name) return json(res, 400, { error: 'name required' });
     const code = text(body.code).trim().toUpperCase();
-    if (INVITE_ONLY && !db.invites.some(i => i.code === code && !i.usedBy && !i.revoked)) {
+    if (INVITE_ONLY && !signupInvite(code)) {
       // The rejected code itself is never recorded — a near-miss guess in the log is a liability.
       audit(req, 'auth.register.denied', { ok: false, name, msg: 'invite-rejected' });
       return json(res, 403, { error: 'a valid invite code is required', code: 'invite' });
@@ -2073,14 +2078,14 @@ const routes = {
     // Re-check the invite at the last moment (it may have been used/revoked since options), then burn it.
     let invite = null;
     if (INVITE_ONLY) {
-      invite = db.invites.find(i => i.code === c.code && !i.usedBy && !i.revoked);
+      invite = signupInvite(c.code);
       if (!invite) {
         audit(req, 'auth.register.fail', { ok: false, name: c.name, msg: 'invite-invalid' });
         return json(res, 403, { error: 'invite code is no longer valid, ask for a new one', code: 'invite' });
       }
     }
     const user = { id: c.uid, name: c.name, created: new Date().toISOString() };
-    if (invite) { user.invitedBy = invite.code; invite.usedBy = user.id; invite.usedAt = user.created; }
+    if (invite) { user.invitedBy = invite.code; invite.usedBy = user.id; invite.usedAt = user.created; linkSignup(invite, user); }
     claimFirstAdmin(req, user);
     db.users.push(user);
     db.creds.push({

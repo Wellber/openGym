@@ -8,7 +8,7 @@ seus alunos; um aluno tem no máximo um trainer.
 
 | Tema | Decisão |
 |---|---|
-| Vínculo | Código gerado pelo trainer; o aluno, já logado, resgata em Settings. Trainer ou aluno desfazem o vínculo |
+| Vínculo | Código gerado pelo trainer. Aluno novo cria a conta com ele (vale como convite em `INVITE_ONLY`) e já nasce vinculado; aluno com conta resgata em Settings. Trainer ou aluno desfazem o vínculo |
 | Quem vira trainer | O admin marca o usuário (`POST /api/admin/user/trainer`) |
 | Edição pelo aluno | Configurável por aluno: `planLocked` no registro do aluno. Travado = o servidor descarta mudanças do aluno nas chaves de plano |
 | Visibilidade do trainer | Plano, histórico de treinos, peso corporal, medidas, estatísticas. Nunca: fotos/vídeos, Coach, lembretes, preferências de app |

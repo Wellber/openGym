@@ -18,7 +18,7 @@ function mintSession(uid) {
 }
 const ADMIN = 'u_adm', TRAINER = 'u_tr', STUDENT = 'u_st', OTHER = 'u_ot';
 
-async function startServer(t) {
+async function startServer(t, extraEnv = {}) {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gym-trainer-'));
   fs.writeFileSync(path.join(dataDir, 'secret'), SECRET, { mode: 0o600 });
   const now = new Date().toISOString();
@@ -37,7 +37,7 @@ async function startServer(t) {
   }));
   const child = spawn(process.execPath, ['server.js'], {
     cwd: API, stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ORIGIN: 'http://localhost:8080', RP_ID: 'localhost' }
+    env: { ...process.env, PORT: '0', DATA_DIR: dataDir, ORIGIN: 'http://localhost:8080', RP_ID: 'localhost', ...extraEnv }
   });
   let log = '';
   child.stdout.on('data', d => log += d);
@@ -48,7 +48,10 @@ async function startServer(t) {
     method, headers: { Cookie: `gymsid=${mintSession(uid)}`, 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {})
   }).then(async r => ({ status: r.status, body: await r.json() }));
-  return { call, dataDir, state: () => JSON.parse(fs.readFileSync(path.join(dataDir, `state-${STUDENT}.json`), 'utf8')) };
+  const db = () => JSON.parse(fs.readFileSync(path.join(dataDir, 'db.json'), 'utf8'));
+  const anon = (p, body) => fetch(api + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(async r => ({ status: r.status, body: await r.json() }));
+  return { call, anon, db, dataDir, state: () => JSON.parse(fs.readFileSync(path.join(dataDir, `state-${STUDENT}.json`), 'utf8')) };
 }
 
 test('trainer flow: grant, link, read, save, lock, unlink', async t => {
@@ -115,4 +118,27 @@ test('revoking the role frees the students', async t => {
   const me = (await call(STUDENT, 'GET', '/api/me')).body.user;
   assert.equal(me.trainerId, null);
   assert.equal(me.planLocked, false);
+});
+
+test('on an invite-only instance a trainer code is a signup invite that links the new account', async t => {
+  const { call, anon, db } = await startServer(t, { INVITE_ONLY: '1', PASSWORD_LOGIN: '1' });
+  await call(ADMIN, 'POST', '/api/admin/user/trainer', { id: TRAINER, trainer: true });
+  const { code } = (await call(TRAINER, 'POST', '/api/trainer/codes/new', { note: 'novo aluno' })).body.code;
+  const pw = 'correct horse battery staple 42';
+
+  assert.equal((await anon('/api/register/password', { name: 'Intruso', password: pw, code: 'DEADBEEFDEADBEEF' })).status, 403);
+  // The passkey route's own check accepts it too (without burning it).
+  assert.equal((await anon('/api/register/options', { name: 'Carla', code })).status, 200);
+  const r = await anon('/api/register/password', { name: 'Carla', password: pw, code: code.toLowerCase() });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const carla = db().users.find(u => u.name === 'Carla');
+  assert.equal(carla.trainerId, TRAINER, 'linked at signup');
+  assert.equal(db().trainerCodes.find(c => c.code === code).usedBy, carla.id, 'code burned');
+  assert.equal((await anon('/api/register/password', { name: 'Outra', password: pw, code })).status, 403, 'single use');
+  assert.deepEqual((await call(TRAINER, 'GET', '/api/trainer/students')).body.students.map(s => s.name), ['Carla']);
+
+  // A code of someone who is no longer a trainer opens nothing.
+  const { code: c2 } = (await call(TRAINER, 'POST', '/api/trainer/codes/new', {})).body.code;
+  await call(ADMIN, 'POST', '/api/admin/user/trainer', { id: TRAINER, trainer: false });
+  assert.equal((await anon('/api/register/password', { name: 'Tarde', password: pw, code: c2 })).status, 403);
 });

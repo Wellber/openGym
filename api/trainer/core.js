@@ -98,6 +98,18 @@ export function enforcePlanLock(cur, incoming) {
   return incoming;
 }
 
+/**
+ * A trainer's link code that is also good as a signup invite on an invite-only instance: unused,
+ * and its trainer still a trainer. Burned like an invite (`usedBy`/`usedAt`), and the account it
+ * creates starts out linked to that trainer.
+ */
+export function signupTrainerCode(db, code) {
+  if (!code) return null;
+  const c = (db.trainerCodes || []).find(x => x.code === code && !x.usedBy);
+  if (!c) return null;
+  return isTrainer((db.users || []).find(u => u.id === c.trainerId)) ? c : null;
+}
+
 /** A link code: 64 random bits, upper-case hex, like the signup invites. */
 export const newCode = (randomHex, taken) => {
   let code;
