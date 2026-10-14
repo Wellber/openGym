@@ -9,7 +9,7 @@ const PT = {
   'My students': 'Meus alunos',
   'Personal trainer': 'Personal trainer',
   'Manage the plans of the people you train.': 'Gerencie os treinos de quem você acompanha.',
-  'No students yet. Generate a code and give it to your student: they enter it in Settings → Personal trainer.': 'Nenhum aluno ainda. Gere um código e passe ao aluno: ele digita em Ajustes → Personal trainer.',
+  'No students yet. Generate a code and give it to your student: they enter it in Settings → Personal trainer.': 'Nenhum aluno ainda. Gere um código e passe ao aluno: ele digita em Configurações → Personal trainer.',
   'Link codes': 'Códigos de vínculo',
   'New code': 'Novo código',
   'Note (optional)': 'Observação (opcional)',
@@ -69,6 +69,8 @@ const PT = {
   'Your trainer locked the plan. Ask them to change it.': 'Seu personal travou o plano. Peça a ele para alterar.',
   'Android app': 'App Android',
   'Download the openGym Personal app for Android.': 'Baixe o app openGym Personal para Android.',
+  'Pair this phone': 'Parear este celular',
+  'Sign in at {0} in a browser, open Settings → “Pair the mobile app” and enter the code shown there.': 'Entre em {0} pelo navegador, abra Configurações → “Parear o aplicativo” e digite o código mostrado lá.',
   'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
 }
 

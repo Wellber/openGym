@@ -10,6 +10,8 @@ import { Button } from '../components/ui.jsx'
 import { askAddDeviceData } from '../sheets.jsx'
 import { normalizeServerUrl } from '../lib/remote.js'
 import { loadCfAccess, saveCfAccess } from '../lib/cf-access.js'
+import { FIXED_SERVER, FIXED_SERVER_HOST } from '../lib/fork-config.js'
+import { tr } from '../lib/trainer-i18n.js'
 
 // A plain http:// server works (#428), but whatever the app sends, the pairing code and then its
 // token, crosses the network readable. Said once under the field, not in the way: on a home
@@ -80,7 +82,8 @@ export function CfAccessSheet({ close, server = '' }) {
 // the sheet says that what the phone kept is merged, not replaced.
 export function ConnectSheet({ close, initialUrl = '', again = false }) {
   const { connectToServer } = useStore()
-  const [url, setUrl] = useState(initialUrl)
+  const fixed = !!FIXED_SERVER
+  const [url, setUrl] = useState(FIXED_SERVER || initialUrl)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   // Why the last try failed, under the fields: a toast is gone in two seconds, too soon to read
@@ -88,7 +91,7 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
   const [error, setError] = useState('')
   const ref = useRef(null)
   const codeRef = useRef(null)
-  useEffect(() => { setTimeout(() => (initialUrl ? codeRef : ref).current?.focus(), 250) }, [])
+  useEffect(() => { setTimeout(() => (initialUrl || fixed ? codeRef : ref).current?.focus(), 250) }, [])
   const go = async () => {
     if (!url.trim() || !code.trim()) { useUI.getState().toast(t('Enter your server address and the code')); return }
     setBusy(true)
@@ -98,15 +101,16 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
     finally { setBusy(false) }
   }
   return <>
-    <h3>{again ? t('Pair again') : t('Connect to my server')}</h3>
+    <h3>{again ? t('Pair again') : fixed ? tr('Pair this phone') : t('Connect to my server')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>
-      {again
+      {fixed ? tr('Sign in at {0} in a browser, open Settings → “Pair the mobile app” and enter the code shown there.', FIXED_SERVER_HOST)
+        : again
         ? t('Open Settings → Account → “Pair the mobile app” on your openGym site in a browser and enter the new code shown there. What this phone kept is merged into your account.')
         : t('Open Settings → Account → “Pair the mobile app” on the openGym site you’re already signed into, then enter its address and the code shown there.')}
     </div>
-    <input ref={ref} className="input" placeholder={t('Server address (e.g. gym.example.com)')} value={url}
-      onChange={e => setUrl(e.target.value)} autoCapitalize="none" autoCorrect="off" inputMode="url" />
-    {plainHttp(url) && <div className="dim small" role="note" style={{ marginTop: 8, lineHeight: 1.45 }}>
+    {!fixed && <input ref={ref} className="input" placeholder={t('Server address (e.g. gym.example.com)')} value={url}
+      onChange={e => setUrl(e.target.value)} autoCapitalize="none" autoCorrect="off" inputMode="url" />}
+    {!fixed && plainHttp(url) && <div className="dim small" role="note" style={{ marginTop: 8, lineHeight: 1.45 }}>
       {t('Plain http:// isn’t encrypted. Fine on your home network, but use https:// if your server is reachable from the internet.')}
     </div>}
     <div style={{ height: 10 }} />
@@ -115,8 +119,10 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
     {error && <div className="small" role="alert" style={{ color: 'var(--red)', marginTop: 10, lineHeight: 1.45, overflowWrap: 'anywhere' }}>{error}</div>}
     <div style={{ height: 12 }} />
     <Button variant="primary" onClick={go} disabled={busy}>{busy ? t('Connecting…') : t('Connect')}</Button>
-    <div style={{ height: 10 }} />
-    <Button icon="key" onClick={() => openCfAccess(normalizeServerUrl(url) || '')} disabled={busy}>{t('Cloudflare Access')}</Button>
+    {!fixed && <>
+      <div style={{ height: 10 }} />
+      <Button icon="key" onClick={() => openCfAccess(normalizeServerUrl(url) || '')} disabled={busy}>{t('Cloudflare Access')}</Button>
+    </>}
   </>
 }
 
@@ -127,6 +133,14 @@ export default function MobileOnboarding() {
     <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 4px' }}>openGym</h1>
   </>
   const wrap = { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '78vh', textAlign: 'center' }
+  // Fork: one server, no local-only mode — the first screen is the pairing code itself.
+  if (FIXED_SERVER) return (
+    <div className="narrow" style={wrap}>
+      <div style={{ fontSize: 54, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="dumbbell" /></div>
+      <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 18px' }}>openGym Personal</h1>
+      <div style={{ textAlign: 'start' }}><ConnectSheet close={() => {}} /></div>
+    </div>
+  )
   return (
     <div className="narrow" style={wrap}>
       {head}

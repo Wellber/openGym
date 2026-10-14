@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { keepLockedPlan } from '../lib/trainer.js'
+import { FIXED_SERVER } from '../lib/fork-config.js'
 import { tr as trainerText } from '../lib/trainer-i18n.js'
 import { api, setRemoteAuth } from '../lib/api.js'
 import { localTZ } from '../lib/format.js'
@@ -1814,7 +1815,8 @@ export const useStore = create((set, get) => {
       pairedBase = null
       setSync({ server: null })
       get().setGuest(true)
-      set({ ready: true })
+      // Fork: no local-only mode to fall back to — back to the pairing code screen.
+      set({ ready: true, ...(MOBILE && FIXED_SERVER ? { needsMobileOnboarding: true } : {}) })
       return r
     },
 
@@ -1920,7 +1922,9 @@ export const useStore = create((set, get) => {
         // Only a genuinely first launch — nothing chosen yet and nothing to lose either — offers
         // the choice. Picking local (even with no data yet) persists that choice below and this
         // never asks again.
-        finishBoot({ needsMobileOnboarding: !remote && !hasData(get().S) })
+        // Fork: with a fixed server there is no local-only mode — a phone that is not paired is
+        // always asked for the pairing code, whatever it already holds (adoptProfile merges it).
+        finishBoot({ needsMobileOnboarding: !remote && (!!FIXED_SERVER || !hasData(get().S)) })
         return
       }
       // Demo build (GitHub Pages): no backend at all — seed once, stay in guest mode.
