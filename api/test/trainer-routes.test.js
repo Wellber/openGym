@@ -184,6 +184,10 @@ test('an account made in the app sets a password with its session and signs in o
   assert.equal((await bearer(made.token, '/api/me')).status, 401, 'the old token is spent');
   assert.equal((await bearer(set.body.token, '/api/me')).status, 200);
 
+  // Only the first password: an e-mail still asks for a real proof, even before the password.
+  const fresh = (await anon('/api/register/app', { name: 'Gabi', code: await code() })).body;
+  assert.equal((await bearer(fresh.token, '/api/account/email', { email: 'gabi@example.com' })).status, 403, 'session is no proof for an e-mail');
+
   // Once it has a password, a session alone no longer changes it.
   assert.equal((await bearer(set.body.token, '/api/account/password', { next: 'another long passphrase 7' })).status, 403);
 

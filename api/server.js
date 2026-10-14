@@ -1198,10 +1198,12 @@ function passwordAttempt(req, res, k) {
 // proof is logged as `auth.proof.fail` for that change, not as a failed sign-in — the owner was
 // signed in all along, and "Password sign-in failed" sent an admin looking for the wrong thing.
 async function proveOwner(req, res, user, body, act) {
-  // Fork (WS-GYM): a profile made in the phone app (POST /api/register/app) has neither a
-  // password nor a passkey — its session is its only credential, so the session proves it. This
-  // is how such a profile gets a password at all, its way back in on another phone.
-  if (!hasPassword(user) && passkeyCount(user) === 0) return 'session';
+  // Fork (WS-GYM): a profile made in the phone app (POST /api/register/app, `origin: 'app'`)
+  // has neither a password nor a passkey — its session is its only credential. That session
+  // proves it for one act only: setting the FIRST password, the profile's way back in on another
+  // phone. Everything else (an e-mail, removing things) still asks for a real proof, and once a
+  // password exists this no longer applies at all.
+  if (act === 'password' && user.origin === 'app' && !hasPassword(user) && passkeyCount(user) === 0) return 'session';
   if (body.credential) {
     if (await passkeyStepUp(user, body)) return 'passkey';
     audit(req, 'auth.proof.fail', { ok: false, user, msg: 'step-up-failed', act });
@@ -2230,7 +2232,7 @@ const routes = {
       return json(res, 403, { error: 'a valid invite code is required', code: 'invite' });
     }
     const created = new Date().toISOString();
-    const user = { id: crypto.randomBytes(12).toString('base64url'), name, created, invitedBy: inv.code };
+    const user = { id: crypto.randomBytes(12).toString('base64url'), name, created, invitedBy: inv.code, origin: 'app' };
     inv.usedBy = user.id; inv.usedAt = created; linkSignup(inv, user);
     claimFirstAdmin(req, user);
     db.users.push(user);
