@@ -71,6 +71,7 @@ const PT = {
   'Download the WS-GYM app for Android.': 'Baixe o app WS-GYM para Android.',
   'Pair this phone': 'Parear este celular',
   'Sign in at {0} in a browser, open Settings → “Pair the mobile app” and enter the code shown there.': 'Entre em {0} pelo navegador, abra Configurações → “Parear o aplicativo” e digite o código mostrado lá.',
+  'This is an invite code (16 characters), not the pairing code. First create your account at {0} in a browser with it. Then, signed in there, open Settings → “Pair the mobile app” and type here the 8-character code shown.': 'Este é um código de convite (16 caracteres), não o código de pareamento. Primeiro crie sua conta em {0} pelo navegador usando ele. Depois, logado lá, abra Configurações → “Parear o aplicativo” e digite aqui o código de 8 caracteres que aparecer.',
   'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
 }
 

@@ -48,4 +48,17 @@ describe('ConnectSheet', () => {
     expect(close).toHaveBeenCalled()
     expect(connectToServer).toHaveBeenLastCalledWith('https://personal.netpoint.cloud', 'ABCD2345', expect.any(Function))
   })
+
+  it('a 16-character invite code is explained instead of cut to 8, and never sent as a pairing code', async () => {
+    const connectToServer = vi.fn()
+    useStore.setState({ connectToServer })
+    act(() => root.render(<ConnectSheet close={vi.fn()} />))
+    const [code] = host.querySelectorAll('input')
+    type(code, 'fa6c3168f40912d9')
+    expect(code.value).toBe('FA6C3168F40912D9')
+    expect(host.querySelector('[role="alert"]')?.textContent).toMatch(/invite code/)
+    expect(connectButton().disabled).toBe(true)
+    await act(async () => { connectButton().click() })
+    expect(connectToServer).not.toHaveBeenCalled()
+  })
 })

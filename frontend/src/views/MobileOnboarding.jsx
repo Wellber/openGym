@@ -93,7 +93,11 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
   const ref = useRef(null)
   const codeRef = useRef(null)
   useEffect(() => { setTimeout(() => (initialUrl || fixed ? codeRef : ref).current?.focus(), 250) }, [])
+  // Fork: a 16-character hex code is an invite or a trainer code (it creates an account, in the
+  // browser), not the 8-character pairing code — the field used to cut it to 8 in silence.
+  const inviteLike = /^[0-9A-F]{9,16}$/.test(code.trim())
   const go = async () => {
+    if (inviteLike) return
     if (!url.trim() || !code.trim()) { useUI.getState().toast(t('Enter your server address and the code')); return }
     setBusy(true)
     setError('')
@@ -115,11 +119,14 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
       {t('Plain http:// isn’t encrypted. Fine on your home network, but use https:// if your server is reachable from the internet.')}
     </div>}
     <div style={{ height: 10 }} />
-    <input ref={codeRef} className="input" placeholder={t('Pairing code')} maxLength={8} value={code}
+    <input ref={codeRef} className="input" placeholder={t('Pairing code')} maxLength={16} value={code}
       onChange={e => setCode(e.target.value.toUpperCase())} style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
+    {inviteLike && <div className="small" role="alert" style={{ color: 'var(--orange)', marginTop: 10, lineHeight: 1.45 }}>
+      {tr('This is an invite code (16 characters), not the pairing code. First create your account at {0} in a browser with it. Then, signed in there, open Settings → “Pair the mobile app” and type here the 8-character code shown.', FIXED_SERVER_HOST || 'your server')}
+    </div>}
     {error && <div className="small" role="alert" style={{ color: 'var(--red)', marginTop: 10, lineHeight: 1.45, overflowWrap: 'anywhere' }}>{error}</div>}
     <div style={{ height: 12 }} />
-    <Button variant="primary" onClick={go} disabled={busy}>{busy ? t('Connecting…') : t('Connect')}</Button>
+    <Button variant="primary" onClick={go} disabled={busy || inviteLike}>{busy ? t('Connecting…') : t('Connect')}</Button>
     {!fixed && <>
       <div style={{ height: 10 }} />
       <Button icon="key" onClick={() => openCfAccess(normalizeServerUrl(url) || '')} disabled={busy}>{t('Cloudflare Access')}</Button>
