@@ -170,6 +170,42 @@ export function SignupSheet({ onPair, initialCode = '' }) {
   </>
 }
 
+// Fork (WS-GYM): an existing profile signs this phone in with its name and password (set in
+// Settings on the phone it was made on, or on the site).
+export function LoginSheet({ onPair, onSignup }) {
+  const { connectToServer } = useStore()
+  const [name, setName] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const ready = name.trim() && password
+  const go = async () => {
+    if (!ready || busy) return
+    setBusy(true)
+    setError('')
+    try { await connectToServer(FIXED_SERVER, null, askAddDeviceData, { name: name.trim(), password }); useUI.getState().toast(t('Connected')) }
+    catch (e) { setError(e.message || t('Could not connect')) }
+    finally { setBusy(false) }
+  }
+  return <>
+    <h3>{tr('Sign in')}</h3>
+    <form onSubmit={ev => { ev.preventDefault(); go() }} noValidate>
+      <input className="input" placeholder={tr('Your name')} value={name} maxLength={40} name="username" autoComplete="username"
+        onChange={e => setName(e.target.value)} autoCapitalize="words" />
+      <div style={{ height: 10 }} />
+      <input className="input" type="password" placeholder={tr('Password')} value={password} name="current-password" autoComplete="current-password"
+        onChange={e => setPassword(e.target.value)} />
+      {error && <div className="small" role="alert" style={{ color: 'var(--red)', marginTop: 10, lineHeight: 1.45, overflowWrap: 'anywhere' }}>{error}</div>}
+      <div style={{ height: 12 }} />
+      <Button type="submit" variant="primary" disabled={busy || !ready}>{busy ? t('Connecting…') : tr('Sign in')}</Button>
+    </form>
+    <div style={{ height: 10 }} />
+    <Button onClick={onPair} disabled={busy}>{tr('Use a pairing code instead')}</Button>
+    <div style={{ height: 10 }} />
+    <Button onClick={onSignup} disabled={busy}>{tr('Create a new account')}</Button>
+  </>
+}
+
 export default function MobileOnboarding() {
   const { chooseLocalMode } = useStore()
   const head = <>
@@ -186,7 +222,9 @@ export default function MobileOnboarding() {
       <div style={{ height: 14 }} />
       <div style={{ textAlign: 'start' }}>
         {mode.kind === 'signup'
-          ? <SignupSheet key={mode.code} initialCode={mode.code} onPair={() => setMode({ kind: 'pair' })} />
+          ? <SignupSheet key={mode.code} initialCode={mode.code} onPair={() => setMode({ kind: 'login' })} />
+          : mode.kind === 'login'
+          ? <LoginSheet onPair={() => setMode({ kind: 'pair' })} onSignup={() => setMode({ kind: 'signup', code: '' })} />
           : <>
             <ConnectSheet close={() => {}} onInvite={c => setMode({ kind: 'signup', code: c })} />
             <div style={{ height: 10 }} />

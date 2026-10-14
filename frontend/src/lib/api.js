@@ -350,6 +350,22 @@ export async function registerApp(serverBase, name, code, { probeMs = PROBE_MS }
   return data
 }
 
+// Fork (WS-GYM): name + password sign-in from the phone app, answered with the app's token.
+export async function loginApp(serverBase, name, password, { probeMs = PROBE_MS } = {}) {
+  let data
+  try {
+    data = await request(serverBase + '/api/login/password', {
+      method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, accessFor(serverBase)), body: JSON.stringify({ name, password, app: true })
+    }, TIMEOUT_GET_MS)
+  } catch (e) {
+    if (e && (e.status === 401 || e.status === 403)) throw failure(tr('Name or password is not right.'), 'login', e.status)
+    if (e && (e.status != null || e.code)) throw e
+    throw await whyUnreachable(serverBase, probeMs)
+  }
+  if (!data.token || !data.user) throw failure(t('The server answered with something other than openGym data.'), 'bad-response', 200)
+  return data
+}
+
 const bufToB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const b64uToBuf = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer
 

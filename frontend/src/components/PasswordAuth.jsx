@@ -7,6 +7,7 @@
 // instead of its name (EmailRow). Passkeys stay the default wherever this appears; the rules
 // themselves are the server's (api/password.js and the password block in api/server.js), this
 // only words them.
+import { tr } from '../lib/trainer-i18n.js'
 import { useEffect, useRef, useState } from 'react'
 import { useStore, hasData } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -336,17 +337,21 @@ export function PasswordSheet({ status, close, done }) {
   const [again, setAgain] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
+  const bare = !status.set && !status.passkeys
   const save = async withPasskey => {
     if (busy) return
-    const bad = !withPasskey && !current ? t('Enter your password.')
+    const bad = !bare && !withPasskey && !current ? t('Enter your password.')
       : length(next) < MIN_PASSWORD ? t('Use at least {0} characters.', MIN_PASSWORD)
       : next !== again ? t('The two passwords are not the same.')
       : null
     if (bad) { setErr(bad); return }
     setBusy(true); setErr(null)
     try {
-      const proof = withPasskey ? await passkeyAssertion() : { current }
-      await api('/api/account/password', { method: 'POST', body: JSON.stringify({ next, ...proof }) })
+      // Fork (WS-GYM): a profile made in the phone app has no password and no passkey yet; its
+      // session is the proof (api/server.js proveOwner), and the token the save renews is kept.
+      const proof = bare ? {} : withPasskey ? await passkeyAssertion() : { current }
+      const r = await api('/api/account/password', { method: 'POST', body: JSON.stringify({ next, ...proof }) })
+      if (r?.token) await useStore.getState().adoptToken?.(r.token)
       close(); done()
       toast(t('Password saved. You’re now signed out everywhere else.'))
     } catch (e) { if (!dismissed(e)) setErr(passwordError(e)) }
@@ -356,7 +361,8 @@ export function PasswordSheet({ status, close, done }) {
   return <>
     <h3>{status.set ? t('Change password') : t('Set a password')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>
-      {t('Sign in as “{0}” with it on devices where passkeys do not work. Saving signs you out everywhere else, and paired phones have to be paired again.', status.name)}
+      {bare ? tr('With a password you can sign in as “{0}” on another phone if you lose or change this one.', status.name)
+        : t('Sign in as “{0}” with it on devices where passkeys do not work. Saving signs you out everywhere else, and paired phones have to be paired again.', status.name)}
     </div>
     <form onSubmit={ev => { ev.preventDefault(); save(!status.set) }} noValidate>
       {/* Tells a password manager which account the new password belongs to. */}
@@ -374,7 +380,7 @@ export function PasswordSheet({ status, close, done }) {
       <div className="dim small" style={{ marginTop: 6 }}>{t('At least {0} characters. A few unrelated words make a good one.', MIN_PASSWORD)}</div>
       {err && <div className="small" role="alert" style={errStyle}>{err}</div>}
       <div style={{ height: 12 }} />
-      <Button type="submit" variant="primary" disabled={busy}>{status.set ? t('Save') : t('Confirm with passkey & save')}</Button>
+      <Button type="submit" variant="primary" disabled={busy}>{status.set || bare ? t('Save') : t('Confirm with passkey & save')}</Button>
     </form>
     {status.set && status.passkeys > 0 && webauthnOK() && <>
       <div style={{ height: 8 }} />

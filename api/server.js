@@ -1198,6 +1198,10 @@ function passwordAttempt(req, res, k) {
 // proof is logged as `auth.proof.fail` for that change, not as a failed sign-in — the owner was
 // signed in all along, and "Password sign-in failed" sent an admin looking for the wrong thing.
 async function proveOwner(req, res, user, body, act) {
+  // Fork (WS-GYM): a profile made in the phone app (POST /api/register/app) has neither a
+  // password nor a passkey — its session is its only credential, so the session proves it. This
+  // is how such a profile gets a password at all, its way back in on another phone.
+  if (!hasPassword(user) && passkeyCount(user) === 0) return 'session';
   if (body.credential) {
     if (await passkeyStepUp(user, body)) return 'passkey';
     audit(req, 'auth.proof.fail', { ok: false, user, msg: 'step-up-failed', act });
@@ -1282,7 +1286,9 @@ const passwordRoutes = {
       if (!still()) return json(res, 401, WRONG);
     }
     audit(req, 'auth.password.ok', { user });
-    json(res, 200, { user: publicUser(user) }, { 'Set-Cookie': sessionCookie(user) });
+    // Fork (WS-GYM): the phone app signs in here too (`app: true`) and keeps a bearer token,
+    // as a pairing would give it; a browser keeps getting the cookie alone.
+    json(res, 200, { user: publicUser(user), ...(body.app === true ? { token: makeSession(user) } : {}) }, { 'Set-Cookie': sessionCookie(user) });
   },
 
   // For browsers that cannot make a passkey at all: plain http on a LAN address, some Firefox
@@ -2214,6 +2220,10 @@ const routes = {
     if (!name) return json(res, 400, { error: 'name required', code: 'missing' });
     if (addressPaused(req, res, 'signup')) return;
     const inv = signupInvite(text(body.code).trim().toUpperCase());
+    // The name is what this profile signs in with once it sets a password: taken, it would be
+    // refused then, after the invite was spent. Checked only behind a valid invite, so a guess
+    // learns nothing about which names exist.
+    if (inv && nameTaken(name)) return json(res, 409, { error: 'another profile already signs in with this name', code: 'name-taken' });
     if (!inv) {
       audit(req, 'auth.register.denied', { ok: false, name, msg: 'invite-rejected · app' });
       strikeAddress(req, 'signup');

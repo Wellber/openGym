@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { _setLangState } from '../lib/i18n-core.js'
-import { ConnectSheet, SignupSheet } from './MobileOnboarding.jsx'
+import { ConnectSheet, SignupSheet, LoginSheet } from './MobileOnboarding.jsx'
 
 let root, host
 const type = (el, value) => act(() => {
@@ -83,5 +83,17 @@ describe('ConnectSheet', () => {
     const go = [...host.querySelectorAll('button')].find(b => b.textContent.trim() === 'Create account with this invite')
     act(() => go.click())
     expect(onInvite).toHaveBeenCalledWith('FA6C3168F40912D9')
+  })
+
+  it('an existing profile signs this phone in with its name and password', async () => {
+    const connectToServer = vi.fn().mockResolvedValue(undefined)
+    useStore.setState({ connectToServer })
+    act(() => root.render(<LoginSheet onPair={vi.fn()} onSignup={vi.fn()} />))
+    const [name, pw] = host.querySelectorAll('input')
+    type(name, 'Fabi')
+    type(pw, 'correct horse battery staple 42')
+    const btn = [...host.querySelectorAll('button')].find(b => b.textContent.trim() === 'Sign in')
+    await act(async () => { btn.click() })
+    expect(connectToServer).toHaveBeenCalledWith('https://personal.netpoint.cloud', null, expect.any(Function), { name: 'Fabi', password: 'correct horse battery staple 42' })
   })
 })

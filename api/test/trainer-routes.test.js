@@ -51,7 +51,7 @@ async function startServer(t, extraEnv = {}) {
   const db = () => JSON.parse(fs.readFileSync(path.join(dataDir, 'db.json'), 'utf8'));
   const anon = (p, body) => fetch(api + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(async r => ({ status: r.status, body: await r.json() }));
-  const bearer = (token, p) => fetch(api + p, { headers: { Authorization: `Bearer ${token}` } }).then(async r => ({ status: r.status, body: await r.json() }));
+  const bearer = (token, p, body, method = body ? 'POST' : 'GET') => fetch(api + p, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) }).then(async r => ({ status: r.status, body: await r.json() }));
   return { call, anon, bearer, db, dataDir, state: () => JSON.parse(fs.readFileSync(path.join(dataDir, `state-${STUDENT}.json`), 'utf8')) };
 }
 
@@ -168,4 +168,33 @@ test('the phone app signs up with an invite alone and gets its token, linked to 
 test('without an invite the app sign-up opens nothing, even on an open instance', async t => {
   const { anon } = await startServer(t);
   assert.equal((await anon('/api/register/app', { name: 'Qualquer', code: '' })).status, 403);
+});
+
+test('an account made in the app sets a password with its session and signs in on another phone', async t => {
+  const { call, anon, bearer, db } = await startServer(t, { INVITE_ONLY: '1', PASSWORD_LOGIN: '1' });
+  await call(ADMIN, 'POST', '/api/admin/user/trainer', { id: TRAINER, trainer: true });
+  const code = async () => (await call(TRAINER, 'POST', '/api/trainer/codes/new', {})).body.code.code;
+  const pw = 'correct horse battery staple 42';
+
+  const made = (await anon('/api/register/app', { name: 'Fabi', code: await code() })).body;
+  // No password and no passkey: the session alone sets the password, and the token is renewed.
+  const set = await bearer(made.token, '/api/account/password', { next: pw });
+  assert.equal(set.status, 200, JSON.stringify(set.body));
+  assert.ok(set.body.token, 'the app gets its renewed token');
+  assert.equal((await bearer(made.token, '/api/me')).status, 401, 'the old token is spent');
+  assert.equal((await bearer(set.body.token, '/api/me')).status, 200);
+
+  // Once it has a password, a session alone no longer changes it.
+  assert.equal((await bearer(set.body.token, '/api/account/password', { next: 'another long passphrase 7' })).status, 403);
+
+  // Another phone: name + password, answered with a token for the app.
+  const login = await anon('/api/login/password', { name: 'Fabi', password: pw, app: true });
+  assert.equal(login.status, 200, JSON.stringify(login.body));
+  assert.equal((await bearer(login.body.token, '/api/me')).body.user.trainerId, TRAINER);
+  assert.equal((await anon('/api/login/password', { name: 'Fabi', password: 'wrong wrong wrong' , app: true })).status >= 400, true);
+
+  // The name is taken now: a second app account cannot claim it (and the code is not spent).
+  const c3 = await code();
+  assert.equal((await anon('/api/register/app', { name: 'fabi', code: c3 })).status, 409);
+  assert.equal(db().trainerCodes.find(c => c.code === c3).usedBy, null);
 });

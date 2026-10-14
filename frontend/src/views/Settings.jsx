@@ -848,6 +848,7 @@ export default function Settings({ page = null, find = null, via = null }) {
         {MOBILE && <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           <TrainerSettings />
+          {pwOn && <PasswordRow version={credsV} />}
           <AccountIdRow id={user.id} />
           <Row icon="signOut" iconTint="var(--red)" title={t('Disconnect')} danger onClick={disconnect} />
         </>}

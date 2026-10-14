@@ -22,7 +22,7 @@ import { countChanges, syncFingerprint } from '../lib/sync-changes.js'
 import { saveWorkoutEdit, deleteEditedWorkout } from '../lib/session-edit.js'
 import { appBase } from '../lib/app-base.js'
 import { linkTokenFromSearch, stripLinkFromUrl } from '../lib/device-link.js'
-import { loadRemote, chooseLocal, forgetRemote, connect, connectNew, normalizeServerUrl, renewToken } from '../lib/remote.js'
+import { loadRemote, chooseLocal, forgetRemote, connect, connectNew, connectLogin, normalizeServerUrl, renewToken } from '../lib/remote.js'
 import { loadCfAccess } from '../lib/cf-access.js'
 import { loadCoachDevice, saveCoachDevice, coachDeviceSettings } from '../lib/coach-device.js'
 import { RTL_LANGS } from '../lib/i18n-core.js'
@@ -1792,10 +1792,19 @@ export const useStore = create((set, get) => {
     // Redeems the pairing code shown in the browser (Settings → "Pair the mobile app") and
     // switches this device over to that account, same as signing in on the web does — the same
     // account pairing again merges what the phone kept (adoptProfile).
-    // Fork (WS-GYM): `signup` = { name } makes the profile from `code` as an invite instead of
+    // Fork (WS-GYM): the server handed this phone a new token (setting a password ends every other
+    // session and renews this one): keep it, or the next request is signed out.
+    async adoptToken(token) {
+      if (!MOBILE || typeof token !== 'string' || !token) return
+      const remote = await loadRemote()
+      if (remote?.mode === 'remote') await renewToken(remote, token)
+    },
+    // Fork (WS-GYM): `signup` = { name, password } signs in with a password instead;
+    // `signup` = { name } makes the profile from `code` as an invite instead of
     // redeeming it as a pairing code; everything after the account is the same.
     async connectToServer(url, code, ask, signup) {
-      const user = signup ? await connectNew(url, signup.name, code) : await connect(url, code)   // throws on a bad URL/expired code — caller shows it
+      const user = signup?.password != null ? await connectLogin(url, signup.name, signup.password)
+        : signup ? await connectNew(url, signup.name, code) : await connect(url, code)   // throws on a bad URL/expired code — caller shows it
       // The account first, the address after: a copy another account still owed is kept aside
       // for it under the server it belongs to, not the one being paired.
       get().setUser(user, { adopt: true })

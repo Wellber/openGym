@@ -83,6 +83,11 @@ const PT = {
   'This is an invite code (16 characters), not a pairing code. Use it to create your account.': 'Este é um código de convite (16 caracteres), não de pareamento. Use-o para criar sua conta.',
   'Create account with this invite': 'Criar conta com este convite',
   'That invite code didn’t work. Each code works once — ask for a new one.': 'Esse código de convite não funcionou. Cada código vale uma vez — peça um novo.',
+  'Sign in': 'Entrar',
+  'Password': 'Senha',
+  'Use a pairing code instead': 'Usar código de pareamento',
+  'Name or password is not right.': 'Nome ou senha incorretos.',
+  'With a password you can sign in as “{0}” on another phone if you lose or change this one.': 'Com uma senha você entra como “{0}” em outro celular se perder ou trocar este.',
   'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
 }
 
