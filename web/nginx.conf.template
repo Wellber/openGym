@@ -117,6 +117,22 @@ server {
     # passes that prefix through — "/gym", no trailing slash. A proxy that strips the prefix
     # before the container sees it needs nothing set here: the app asks its own address for the
     # API (lib/api.js appBase), so the call carries whatever prefix the browser is using.
+    # Fork (WS-GYM): the Android app download, a file the compose override mounts here. Never
+    # cached — by the browser or by Cloudflare in front, which otherwise kept serving the previous
+    # build for hours after an update — and sent as an APK, so Android offers to install it.
+    # Exact match: beats every regex location below. Headers repeated, as add_header replaces.
+    location = ${BASE_PATH}/wgym.apk {
+        rewrite ^\Q${BASE_PATH}\E/(.*)$ /$1 break;
+        types { }
+        default_type application/vnd.android.package-archive;
+        add_header Cache-Control "no-store" always;
+        add_header Content-Disposition 'attachment; filename="WS-GYM.apk"' always;
+        add_header X-Frame-Options "DENY" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "same-origin" always;
+        add_header Content-Security-Policy "frame-ancestors 'none'" always;
+    }
+
     location ${BASE_PATH}/ {
         # `rewrite ... break` rather than `alias`: try_files inside an aliased prefix location is
         # a long-standing nginx trap (it still resolves the untranslated URI). With BASE_PATH
