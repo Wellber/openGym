@@ -72,6 +72,17 @@ const PT = {
   'Pair this phone': 'Parear este celular',
   'Sign in at {0} in a browser, open Settings → “Pair the mobile app” and enter the code shown there.': 'Entre em {0} pelo navegador, abra Configurações → “Parear o aplicativo” e digite o código mostrado lá.',
   'This is an invite code (16 characters), not the pairing code. First create your account at {0} in a browser with it. Then, signed in there, open Settings → “Pair the mobile app” and type here the 8-character code shown.': 'Este é um código de convite (16 caracteres), não o código de pareamento. Primeiro crie sua conta em {0} pelo navegador usando ele. Depois, logado lá, abra Configurações → “Parear o aplicativo” e digite aqui o código de 8 caracteres que aparecer.',
+  'Create your account': 'Crie sua conta',
+  'Enter your name and the invite code you received from your personal trainer.': 'Digite seu nome e o código de convite que você recebeu do seu personal.',
+  'Your name': 'Seu nome',
+  'Invite code': 'Código de convite',
+  'Create account': 'Criar conta',
+  'Account created': 'Conta criada',
+  'I already have an account': 'Já tenho conta',
+  'Create a new account': 'Criar uma conta nova',
+  'This is an invite code (16 characters), not a pairing code. Use it to create your account.': 'Este é um código de convite (16 caracteres), não de pareamento. Use-o para criar sua conta.',
+  'Create account with this invite': 'Criar conta com este convite',
+  'That invite code didn’t work. Each code works once — ask for a new one.': 'Esse código de convite não funcionou. Cada código vale uma vez — peça um novo.',
   'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
 }
 

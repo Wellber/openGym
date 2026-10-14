@@ -81,7 +81,7 @@ export function CfAccessSheet({ close, server = '' }) {
 // `again`: a phone whose server stopped accepting it (components/ServerSync.jsx pairAgain) — the
 // address it had is filled in when it still has one, so only the new code is left to type, and
 // the sheet says that what the phone kept is merged, not replaced.
-export function ConnectSheet({ close, initialUrl = '', again = false }) {
+export function ConnectSheet({ close, initialUrl = '', again = false, onInvite }) {
   const { connectToServer } = useStore()
   const fixed = !!FIXED_SERVER
   const [url, setUrl] = useState(FIXED_SERVER || initialUrl)
@@ -122,7 +122,9 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
     <input ref={codeRef} className="input" placeholder={t('Pairing code')} maxLength={16} value={code}
       onChange={e => setCode(e.target.value.toUpperCase())} style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
     {inviteLike && <div className="small" role="alert" style={{ color: 'var(--orange)', marginTop: 10, lineHeight: 1.45 }}>
-      {tr('This is an invite code (16 characters), not the pairing code. First create your account at {0} in a browser with it. Then, signed in there, open Settings → “Pair the mobile app” and type here the 8-character code shown.', FIXED_SERVER_HOST || 'your server')}
+      {onInvite ? tr('This is an invite code (16 characters), not a pairing code. Use it to create your account.')
+        : tr('This is an invite code (16 characters), not the pairing code. First create your account at {0} in a browser with it. Then, signed in there, open Settings → “Pair the mobile app” and type here the 8-character code shown.', FIXED_SERVER_HOST || 'your server')}
+      {onInvite && <><div style={{ height: 8 }} /><Button onClick={() => onInvite(code.trim())}>{tr('Create account with this invite')}</Button></>}
     </div>}
     {error && <div className="small" role="alert" style={{ color: 'var(--red)', marginTop: 10, lineHeight: 1.45, overflowWrap: 'anywhere' }}>{error}</div>}
     <div style={{ height: 12 }} />
@@ -134,6 +136,40 @@ export function ConnectSheet({ close, initialUrl = '', again = false }) {
   </>
 }
 
+// Fork (WS-GYM): the phone's own sign-up — a name and the invite (an admin's or a trainer's code)
+// make the profile on FIXED_SERVER and leave this phone connected to it (POST /api/register/app).
+export function SignupSheet({ onPair, initialCode = '' }) {
+  const { connectToServer } = useStore()
+  const [name, setName] = useState('')
+  const [code, setCode] = useState(initialCode)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const nameRef = useRef(null)
+  useEffect(() => { setTimeout(() => nameRef.current?.focus(), 250) }, [])
+  const ready = name.trim() && code.trim().length >= 16
+  const go = async () => {
+    if (!ready) return
+    setBusy(true)
+    setError('')
+    try { await connectToServer(FIXED_SERVER, code.trim(), askAddDeviceData, { name: name.trim() }); useUI.getState().toast(tr('Account created')) }
+    catch (e) { setError(e.message || t('Could not connect')) }
+    finally { setBusy(false) }
+  }
+  return <>
+    <h3>{tr('Create your account')}</h3>
+    <div className="muted small" style={{ marginBottom: 14 }}>{tr('Enter your name and the invite code you received from your personal trainer.')}</div>
+    <input ref={nameRef} className="input" placeholder={tr('Your name')} value={name} maxLength={40}
+      onChange={e => setName(e.target.value)} autoCapitalize="words" autoComplete="name" />
+    <div style={{ height: 10 }} />
+    <input className="input" placeholder={tr('Invite code')} maxLength={16} value={code} autoCapitalize="characters" autoCorrect="off" autoComplete="off"
+      onChange={e => setCode(e.target.value.toUpperCase().replace(/\s+/g, ''))} style={{ letterSpacing: '.08em', fontWeight: 600, textAlign: 'center' }} />
+    {error && <div className="small" role="alert" style={{ color: 'var(--red)', marginTop: 10, lineHeight: 1.45, overflowWrap: 'anywhere' }}>{error}</div>}
+    <div style={{ height: 12 }} />
+    <Button variant="primary" onClick={go} disabled={busy || !ready}>{busy ? t('Connecting…') : tr('Create account')}</Button>
+    {onPair && <><div style={{ height: 10 }} /><Button onClick={onPair} disabled={busy}>{tr('I already have an account')}</Button></>}
+  </>
+}
+
 export default function MobileOnboarding() {
   const { chooseLocalMode } = useStore()
   const head = <>
@@ -141,12 +177,22 @@ export default function MobileOnboarding() {
     <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 4px' }}>openGym</h1>
   </>
   const wrap = { display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '78vh', textAlign: 'center' }
-  // Fork: one server, no local-only mode — the first screen is the pairing code itself.
+  // Fork: one server, no local-only mode — the first screen creates the account from an invite;
+  // someone who already has one pairs this phone with a code from the site instead.
+  const [mode, setMode] = useState({ kind: 'signup', code: '' })
   if (FIXED_SERVER) return (
     <div className="narrow" style={wrap}>
       <Brand />
       <div style={{ height: 14 }} />
-      <div style={{ textAlign: 'start' }}><ConnectSheet close={() => {}} /></div>
+      <div style={{ textAlign: 'start' }}>
+        {mode.kind === 'signup'
+          ? <SignupSheet key={mode.code} initialCode={mode.code} onPair={() => setMode({ kind: 'pair' })} />
+          : <>
+            <ConnectSheet close={() => {}} onInvite={c => setMode({ kind: 'signup', code: c })} />
+            <div style={{ height: 10 }} />
+            <Button onClick={() => setMode({ kind: 'signup', code: '' })}>{tr('Create a new account')}</Button>
+          </>}
+      </div>
     </div>
   )
   return (

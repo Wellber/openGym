@@ -51,7 +51,8 @@ async function startServer(t, extraEnv = {}) {
   const db = () => JSON.parse(fs.readFileSync(path.join(dataDir, 'db.json'), 'utf8'));
   const anon = (p, body) => fetch(api + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(async r => ({ status: r.status, body: await r.json() }));
-  return { call, anon, db, dataDir, state: () => JSON.parse(fs.readFileSync(path.join(dataDir, `state-${STUDENT}.json`), 'utf8')) };
+  const bearer = (token, p) => fetch(api + p, { headers: { Authorization: `Bearer ${token}` } }).then(async r => ({ status: r.status, body: await r.json() }));
+  return { call, anon, bearer, db, dataDir, state: () => JSON.parse(fs.readFileSync(path.join(dataDir, `state-${STUDENT}.json`), 'utf8')) };
 }
 
 test('trainer flow: grant, link, read, save, lock, unlink', async t => {
@@ -141,4 +142,30 @@ test('on an invite-only instance a trainer code is a signup invite that links th
   const { code: c2 } = (await call(TRAINER, 'POST', '/api/trainer/codes/new', {})).body.code;
   await call(ADMIN, 'POST', '/api/admin/user/trainer', { id: TRAINER, trainer: false });
   assert.equal((await anon('/api/register/password', { name: 'Tarde', password: pw, code: c2 })).status, 403);
+});
+
+test('the phone app signs up with an invite alone and gets its token, linked to the trainer', async t => {
+  const { call, anon, bearer, db } = await startServer(t, { INVITE_ONLY: '1' });
+  await call(ADMIN, 'POST', '/api/admin/user/trainer', { id: TRAINER, trainer: true });
+  const { code } = (await call(TRAINER, 'POST', '/api/trainer/codes/new', {})).body.code;
+
+  assert.equal((await anon('/api/register/app', { name: '', code })).status, 400);
+  assert.equal((await anon('/api/register/app', { name: 'Dani', code: 'DEADBEEFDEADBEEF' })).status, 403);
+  const r = await anon('/api/register/app', { name: 'Dani', code: code.toLowerCase() });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.ok(r.body.token && r.body.user.id);
+  const dani = db().users.find(u => u.name === 'Dani');
+  assert.equal(dani.trainerId, TRAINER);
+  assert.equal(db().trainerCodes.find(c => c.code === code).usedBy, dani.id);
+  assert.equal((await anon('/api/register/app', { name: 'Eva', code })).status, 403, 'single use');
+
+  // The token is the app's session (Bearer, as a paired phone sends it).
+  const me = await bearer(r.body.token, '/api/me');
+  assert.equal(me.status, 200);
+  assert.equal(me.body.user.trainerId, TRAINER);
+});
+
+test('without an invite the app sign-up opens nothing, even on an open instance', async t => {
+  const { anon } = await startServer(t);
+  assert.equal((await anon('/api/register/app', { name: 'Qualquer', code: '' })).status, 403);
 });

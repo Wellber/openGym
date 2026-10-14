@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { _setLangState } from '../lib/i18n-core.js'
-import { ConnectSheet } from './MobileOnboarding.jsx'
+import { ConnectSheet, SignupSheet } from './MobileOnboarding.jsx'
 
 let root, host
 const type = (el, value) => act(() => {
@@ -60,5 +60,28 @@ describe('ConnectSheet', () => {
     expect(connectButton().disabled).toBe(true)
     await act(async () => { connectButton().click() })
     expect(connectToServer).not.toHaveBeenCalled()
+  })
+
+  it('signs up from the phone with a name and the invite alone, on the fixed server', async () => {
+    const connectToServer = vi.fn().mockResolvedValue(undefined)
+    useStore.setState({ connectToServer })
+    act(() => root.render(<SignupSheet onPair={vi.fn()} />))
+    const btn = () => [...host.querySelectorAll('button')].find(b => b.textContent.trim() === 'Create account')
+    const [name, code] = host.querySelectorAll('input')
+    expect(btn().disabled).toBe(true)
+    type(name, 'Dani')
+    type(code, 'fa6c 3168 f409 12d9')
+    expect(code.value).toBe('FA6C3168F40912D9')
+    await act(async () => { btn().click() })
+    expect(connectToServer).toHaveBeenCalledWith('https://personal.netpoint.cloud', 'FA6C3168F40912D9', expect.any(Function), { name: 'Dani' })
+  })
+
+  it('an invite pasted where the pairing code goes leads to the sign-up with it', async () => {
+    const onInvite = vi.fn()
+    act(() => root.render(<ConnectSheet close={vi.fn()} onInvite={onInvite} />))
+    type(host.querySelector('input'), 'FA6C3168F40912D9')
+    const go = [...host.querySelectorAll('button')].find(b => b.textContent.trim() === 'Create account with this invite')
+    act(() => go.click())
+    expect(onInvite).toHaveBeenCalledWith('FA6C3168F40912D9')
   })
 })

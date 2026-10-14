@@ -2202,6 +2202,33 @@ const routes = {
     json(res, 200, { code });
   },
 
+  // Fork (WS-GYM): the phone app's own sign-up, for an app that only talks to this server. A
+  // passkey cannot be made inside the app (its WebView is not on RP_ID), so the invite is the
+  // whole credential: a valid, unused invite or trainer code makes the profile — burned, and
+  // linked to the trainer, exactly as on the web — and the answer is what a pairing answers, the
+  // app's bearer token. Refused without a code even on an open instance: nothing else proves
+  // anything here. Wrong codes count against the address like the other signup routes.
+  'POST /api/register/app': async (req, res) => {
+    const body = await readBody(req);
+    const name = text(body.name).trim().slice(0, 40);
+    if (!name) return json(res, 400, { error: 'name required', code: 'missing' });
+    if (addressPaused(req, res, 'signup')) return;
+    const inv = signupInvite(text(body.code).trim().toUpperCase());
+    if (!inv) {
+      audit(req, 'auth.register.denied', { ok: false, name, msg: 'invite-rejected · app' });
+      strikeAddress(req, 'signup');
+      return json(res, 403, { error: 'a valid invite code is required', code: 'invite' });
+    }
+    const created = new Date().toISOString();
+    const user = { id: crypto.randomBytes(12).toString('base64url'), name, created, invitedBy: inv.code };
+    inv.usedBy = user.id; inv.usedAt = created; linkSignup(inv, user);
+    claimFirstAdmin(req, user);
+    db.users.push(user);
+    saveDb();
+    audit(req, 'auth.register.ok', { user, msg: inv.code + ' · app' });
+    json(res, 200, { token: makeSession(user), user: { id: user.id, name: user.name, admin: isAdmin(user) } });
+  },
+
   // Called from the mobile app itself with the code shown in the browser. No session required —
   // the code IS the credential, one-shot and 5-minute-lived like a WebAuthn challenge.
   'POST /api/pair/redeem': async (req, res) => {

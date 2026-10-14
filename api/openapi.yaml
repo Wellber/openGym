@@ -2975,6 +2975,24 @@ paths:
       responses:
         '200': { description: OK }
         '401': { description: Not signed in. }
+  /api/register/app:
+    post:
+      tags: [trainer]
+      operationId: registerApp
+      summary: 'Sign up from the phone app with an invite'
+      description: Fork (WS-GYM). Creates a profile from a valid unused invite or trainer code (a trainer code also links the profile to the trainer) and answers like a pairing, with the app's bearer token. 403 without a valid code.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: OK }
+        '403': { description: No valid invite. }
   /api/trainer/students:
     get:
       tags: [trainer]

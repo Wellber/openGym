@@ -1,4 +1,5 @@
 // Backend + WebAuthn helpers (ported from the vanilla app).
+import { tr } from './trainer-i18n.js'
 import { t } from './i18n-core.js'
 import { MOBILE } from './mobile.js'
 import { appBase } from './app-base.js'
@@ -327,6 +328,24 @@ export async function pairRedeem(serverBase, code, { probeMs = PROBE_MS } = {}) 
   }
   // Anything that is not a pairing would be saved as one — and the phone would then send every
   // change to a server that never gave it a token.
+  if (!data.token || !data.user) throw failure(t('The server answered with something other than openGym data.'), 'bad-response', 200)
+  return data
+}
+
+// Fork (WS-GYM): makes the profile from an invite and hands back what a pairing does — the
+// server's POST /api/register/app. Same bootstrap rules as pairRedeem: straight to the server,
+// no Authorization header yet.
+export async function registerApp(serverBase, name, code, { probeMs = PROBE_MS } = {}) {
+  let data
+  try {
+    data = await request(serverBase + '/api/register/app', {
+      method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, accessFor(serverBase)), body: JSON.stringify({ name, code })
+    }, TIMEOUT_GET_MS)
+  } catch (e) {
+    if (e && e.status === 403) throw failure(tr('That invite code didn’t work. Each code works once — ask for a new one.'), 'invite', 403)
+    if (e && (e.status != null || e.code)) throw e
+    throw await whyUnreachable(serverBase, probeMs)
+  }
   if (!data.token || !data.user) throw failure(t('The server answered with something other than openGym data.'), 'bad-response', 200)
   return data
 }
