@@ -67,6 +67,8 @@ const PT = {
   'They stop seeing your training and can no longer change your plan.': 'Ele deixa de ver seu treino e não pode mais alterar seu plano.',
   'Your plan is managed by your trainer.': 'Seu plano é gerenciado pelo seu personal.',
   'Your trainer locked the plan. Ask them to change it.': 'Seu personal travou o plano. Peça a ele para alterar.',
+  'Android app': 'App Android',
+  'Download the openGym Personal app for Android.': 'Baixe o app openGym Personal para Android.',
   'Sun': 'Dom', 'Mon': 'Seg', 'Tue': 'Ter', 'Wed': 'Qua', 'Thu': 'Qui', 'Fri': 'Sex', 'Sat': 'Sáb',
 }
 

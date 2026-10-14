@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { api } from '../lib/api.js'
+import { api, appBase } from '../lib/api.js'
+import { MOBILE } from '../lib/mobile.js'
 import { tr } from '../lib/trainer-i18n.js'
 import { confirmSheet } from '../sheets.jsx'
 import { Row, Button, TextField } from './ui.jsx'
@@ -49,4 +50,13 @@ export default function TrainerSettings() {
   return <Row icon="personCircle" iconTint="var(--acc)" title={tr('Your trainer')}
     subtitle={tr('Linked to {0}.', mine.trainer.name) + ' ' + (mine.planLocked ? tr('Your trainer manages your routines and week. You train and log as usual.') : '')}
     accessory="chevron" onClick={() => confirmSheet({ title: tr('Unlink from {0}?', mine.trainer.name), message: tr('They stop seeing your training and can no longer change your plan.'), confirmText: tr('Unlink'), danger: true, onConfirm: unlink })} />
+}
+
+// The fork's own Android build, served by this instance at /wgym.apk (docs/dev/PERSONAL_TRAINER.md).
+// Web only: inside the app itself there is nothing to download.
+export function ApkDownloadRow() {
+  if (MOBILE) return null
+  const href = appBase().replace(/\/$/, '') + '/wgym.apk'
+  return <Row icon="download" iconTint="var(--green)" title={tr('Android app')} subtitle={tr('Download the openGym Personal app for Android.')} accessory="chevron"
+    onClick={() => { const a = document.createElement('a'); a.href = href; a.download = 'wgym.apk'; document.body.appendChild(a); a.click(); a.remove() }} />
 }

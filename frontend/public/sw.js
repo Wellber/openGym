@@ -256,6 +256,9 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url)
   if (e.request.method !== 'GET' || url.origin !== location.origin) return
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith(API)) return    // never cache auth/data
+  // Fork: the Android app download (/wgym.apk, ~220 MB) goes straight to the network — cached here
+  // it would fill the phone's storage with a copy nobody needs after installing.
+  if (url.pathname.endsWith('.apk')) return
 
   if (isMediaPath(url.pathname)) {
     e.respondWith(media(e))
